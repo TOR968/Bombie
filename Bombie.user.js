@@ -1,3 +1,16 @@
+// ==UserScript==
+// @name         Bombie Catizen Auto-Clicker
+// @version      1
+// @author       TOR968
+// @namespace    Violentmonkey Script
+// @match        https://games.pluto.vision/games/bombie1210/*
+// @grant        none
+// @icon         none
+// @downloadURL  https://github.com/TOR968/Bombie/raw/main/Bombie.js
+// @updateURL    https://github.com/TOR968/Bombie/raw/main/Bombie.js
+// @homepage     https://github.com/TOR968/Bombie
+// ==/UserScript==
+
 class ClickAutomation {
     constructor() {
         this.isRunning = false;
