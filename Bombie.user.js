@@ -2,12 +2,11 @@
 // @name         Bombie Catizen Auto-Clicker
 // @version      1
 // @author       TOR968
-// @namespace    Violentmonkey Script
 // @match        https://games.pluto.vision/games/bombie1210/*
 // @grant        none
 // @icon         none
-// @downloadURL  https://github.com/TOR968/Bombie/raw/main/Bombie.js
-// @updateURL    https://github.com/TOR968/Bombie/raw/main/Bombie.js
+// @downloadURL  https://github.com/TOR968/Bombie/raw/main/Bombie.user.js
+// @updateURL    https://github.com/TOR968/Bombie/raw/main/Bombie.user.js
 // @homepage     https://github.com/TOR968/Bombie
 // ==/UserScript==
 
