@@ -2,11 +2,11 @@
 // @name         Bombie Catizen Auto-Clicker
 // @version      1
 // @author       TOR968
-// @match        https://games.pluto.vision/games/bombie1210/*
+// @match        https://games.pluto.vision/games/bombie*
 // @grant        none
 // @icon         none
-// @downloadURL  https://github.com/TOR968/Bombie/raw/refs/heads/main/Bombie.user.js
-// @updateURL    https://github.com/TOR968/Bombie/raw/refs/heads/main/Bombie.user.js
+// @downloadURL  https://raw.githubusercontent.com/TOR968/Bombie/refs/heads/main/Bombie.user.js
+// @updateURL    https://raw.githubusercontent.com/TOR968/Bombie/refs/heads/main/Bombie.user.js
 // @homepage     https://github.com/TOR968/Bombie
 // ==/UserScript==
 
@@ -14,6 +14,7 @@ class ClickAutomation {
     constructor() {
         this.isRunning = false;
         this.currentButtonIndex = 0;
+        this.markerSize = 20;
         this.coordinateMarkers = [];
         this.buttons = [];
         this.loadCoordinates();
@@ -41,10 +42,6 @@ class ClickAutomation {
                         x: 0.5 * document.getElementById("GameCanvas").offsetWidth,
                         y: document.getElementById("GameCanvas").offsetHeight - 80,
                     },
-                    {
-                        x: 0.5 * document.getElementById("GameCanvas").offsetWidth + 40,
-                        y: document.getElementById("GameCanvas").offsetHeight - 80,
-                    },
                 ];
             }
         } catch (error) {
@@ -54,12 +51,67 @@ class ClickAutomation {
                     x: 0.5 * document.getElementById("GameCanvas").offsetWidth,
                     y: document.getElementById("GameCanvas").offsetHeight - 80,
                 },
-                {
-                    x: 0.5 * document.getElementById("GameCanvas").offsetWidth + 40,
-                    y: document.getElementById("GameCanvas").offsetHeight - 80,
-                },
             ];
         }
+    }
+
+    createButtonInputs(container, button, index) {
+        const buttonLabel = document.createElement("label");
+        buttonLabel.textContent = `Button ${index + 1}`;
+        buttonLabel.style.display = "flex";
+        buttonLabel.style.alignItems = "center";
+        buttonLabel.style.gap = "5px";
+
+        const buttonContainer = document.createElement("div");
+        buttonContainer.style.display = "flex";
+        buttonContainer.style.flexDirection = "column";
+        buttonContainer.style.gap = "5px";
+        buttonContainer.style.marginBottom = "10px";
+        buttonContainer.style.padding = "5px";
+        buttonContainer.style.border = "1px solid #ccc";
+        buttonContainer.style.borderRadius = "5px";
+
+        const coordContainer = document.createElement("div");
+        coordContainer.style.display = "flex";
+        coordContainer.style.gap = "5px";
+
+        const xInput = document.createElement("input");
+        xInput.type = "number";
+        xInput.placeholder = `X${index + 1}`;
+        xInput.value = button.x;
+        xInput.style.width = "70px";
+
+        const yInput = document.createElement("input");
+        yInput.type = "number";
+        yInput.placeholder = `Y${index + 1}`;
+        yInput.value = button.y;
+        yInput.style.width = "70px";
+
+        const deleteButton = document.createElement("button");
+        deleteButton.textContent = "×";
+        deleteButton.style.padding = "2px 6px";
+        deleteButton.style.backgroundColor = "red";
+        deleteButton.style.color = "white";
+        deleteButton.style.border = "none";
+        deleteButton.style.borderRadius = "3px";
+        deleteButton.style.cursor = "pointer";
+        deleteButton.addEventListener("click", () => {
+            if (this.buttons.length > 1) {
+                this.buttons.splice(index, 1);
+                this.updateSettingsPanel();
+                this.saveCoordinates();
+                this.updateCoordinateMarkers();
+            }
+        });
+
+        buttonLabel.appendChild(deleteButton);
+        coordContainer.appendChild(xInput);
+        coordContainer.appendChild(yInput);
+        buttonContainer.appendChild(buttonLabel);
+        buttonContainer.appendChild(coordContainer);
+        container.appendChild(buttonContainer);
+
+        return { xInput, yInput };
     }
 
     createControlPanel() {
@@ -98,6 +150,38 @@ class ClickAutomation {
         settingsPanel.style.flexDirection = "column";
         settingsPanel.style.gap = "5px";
         settingsPanel.style.width = "200px";
+        settingsPanel.style.maxHeight = "50vh";
+
+        const scrollContainer = document.createElement("div");
+        scrollContainer.style.overflowY = "auto";
+        scrollContainer.style.maxHeight = "calc(50vh - 120px)";
+        scrollContainer.style.paddingRight = "5px";
+        scrollContainer.style.marginRight = "-5px";
+        scrollContainer.style.scrollbarWidth = "thin";
+        scrollContainer.style.scrollbarColor = "#888 #f1f1f1";
+
+        const styleSheet = document.createElement("style");
+        styleSheet.textContent = `
+            .scroll-container::-webkit-scrollbar {
+                width: 5px;
+            }
+            .scroll-container::-webkit-scrollbar-track {
+                background: #f1f1f1;
+                border-radius: 5px;
+            }
+            .scroll-container::-webkit-scrollbar-thumb {
+                background: #888;
+                border-radius: 5px;
+            }
+            .scroll-container::-webkit-scrollbar-thumb:hover {
+                background: #555;
+            }
+        `;
+        document.head.appendChild(styleSheet);
+        scrollContainer.classList.add("scroll-container");
+
+        const buttonInputsContainer = document.createElement("div");
+        scrollContainer.appendChild(buttonInputsContainer);
 
         expandButton.addEventListener("click", () => {
             if (settingsPanel.style.display === "none") {
@@ -109,37 +193,34 @@ class ClickAutomation {
             }
         });
 
-        const firstButtonLabel = document.createElement("label");
-        firstButtonLabel.textContent = "Box Button Green";
+        const addButtonContainer = document.createElement("div");
+        addButtonContainer.style.display = "flex";
+        addButtonContainer.style.justifyContent = "center";
+        addButtonContainer.style.marginBottom = "10px";
+        addButtonContainer.style.marginTop = "10px";
 
-        const firstXInput = document.createElement("input");
-        firstXInput.type = "number";
-        firstXInput.placeholder = "X1";
-        firstXInput.value = this.buttons[0].x;
-        firstXInput.style.width = "100%";
-        firstXInput.style.marginBottom = "5px";
+        const addButton = document.createElement("button");
+        addButton.textContent = "Add Button";
+        addButton.style.padding = "5px 10px";
+        addButton.style.backgroundColor = "green";
+        addButton.style.color = "white";
+        addButton.style.border = "none";
+        addButton.style.borderRadius = "3px";
+        addButton.style.cursor = "pointer";
+        addButton.addEventListener("click", () => {
+            const canvas = document.getElementById("GameCanvas");
+            this.buttons.push({
+                x: 0.5 * canvas.offsetWidth,
+                y: canvas.offsetHeight - 80,
+            });
+            this.updateSettingsPanel();
+            this.saveCoordinates();
+            this.updateCoordinateMarkers();
 
-        const firstYInput = document.createElement("input");
-        firstYInput.type = "number";
-        firstYInput.placeholder = "Y1";
-        firstYInput.value = this.buttons[0].y;
-        firstYInput.style.width = "100%";
-
-        const secondButtonLabel = document.createElement("label");
-        secondButtonLabel.textContent = "Equip Button Blue";
-
-        const secondXInput = document.createElement("input");
-        secondXInput.type = "number";
-        secondXInput.placeholder = "X2";
-        secondXInput.value = this.buttons[1].x;
-        secondXInput.style.width = "100%";
-        secondXInput.style.marginBottom = "5px";
-
-        const secondYInput = document.createElement("input");
-        secondYInput.type = "number";
-        secondYInput.placeholder = "Y2";
-        secondYInput.value = this.buttons[1].y;
-        secondYInput.style.width = "100%";
+            setTimeout(() => {
+                scrollContainer.scrollTop = scrollContainer.scrollHeight;
+            }, 0);
+        });
 
         const updateButton = document.createElement("button");
         updateButton.textContent = "Update Coordinates";
@@ -149,36 +230,10 @@ class ClickAutomation {
         updateButton.style.border = "none";
         updateButton.style.borderRadius = "5px";
         updateButton.style.cursor = "pointer";
-        updateButton.addEventListener("click", () => {
-            this.clearCoordinateMarkers();
 
-            this.buttons = [
-                {
-                    x: parseFloat(firstXInput.value),
-                    y: parseFloat(firstYInput.value),
-                },
-                {
-                    x: parseFloat(secondXInput.value),
-                    y: parseFloat(secondYInput.value),
-                },
-            ];
-
-            this.saveCoordinates();
-
-            this.coordinateMarkers = [
-                this.createCoordinateMarker(this.buttons[0].x, this.buttons[0].y, "green"),
-                this.createCoordinateMarker(this.buttons[1].x, this.buttons[1].y, "blue"),
-            ];
-
-            console.log("Updated Coordinates:", this.buttons);
-        });
-
-        settingsPanel.appendChild(firstButtonLabel);
-        settingsPanel.appendChild(firstXInput);
-        settingsPanel.appendChild(firstYInput);
-        settingsPanel.appendChild(secondButtonLabel);
-        settingsPanel.appendChild(secondXInput);
-        settingsPanel.appendChild(secondYInput);
+        addButtonContainer.appendChild(addButton);
+        settingsPanel.appendChild(scrollContainer);
+        settingsPanel.appendChild(addButtonContainer);
         settingsPanel.appendChild(updateButton);
 
         controlContainer.appendChild(toggleButton);
@@ -187,45 +242,66 @@ class ClickAutomation {
 
         document.body.appendChild(controlContainer);
         this.toggleButton = toggleButton;
+        this.settingsPanel = settingsPanel;
+        this.buttonInputsContainer = buttonInputsContainer;
+        this.updateButton = updateButton;
 
-        this.coordinateMarkers = [
-            this.createCoordinateMarker(this.buttons[0].x, this.buttons[0].y, "green"),
-            this.createCoordinateMarker(this.buttons[1].x, this.buttons[1].y, "blue"),
-        ];
+        this.updateSettingsPanel();
+        this.updateCoordinateMarkers();
     }
 
-    createCoordinateMarker(x, y, color = "red") {
-        const canvas = document.getElementById("GameCanvas");
-        if (!canvas) return null;
+    updateSettingsPanel() {
+        this.buttonInputsContainer.innerHTML = "";
+        const inputs = [];
 
-        const marker = document.createElement("div");
-        marker.style.position = "absolute";
-        marker.style.width = "10px";
-        marker.style.height = "10px";
-        marker.style.borderRadius = "50%";
-        marker.style.backgroundColor = color;
-        marker.style.left = `${x}px`;
-        marker.style.top = `${y}px`;
-        marker.style.zIndex = "9999";
-        marker.style.transform = "translate(-50%, -50%)";
+        this.buttons.forEach((button, index) => {
+            const { xInput, yInput } = this.createButtonInputs(this.buttonInputsContainer, button, index);
+            inputs.push({ xInput, yInput });
+        });
 
-        canvas.parentElement.appendChild(marker);
-        return marker;
-    }
-
-    clearCoordinateMarkers() {
-        this.coordinateMarkers.forEach((marker) => marker.remove());
-        this.coordinateMarkers = [];
-    }
-
-    getRandomOffset() {
-        return {
-            x: Math.random() * 8 - 4,
-            y: Math.random() * 8 - 4,
+        this.updateButton.onclick = () => {
+            this.buttons = inputs.map(({ xInput, yInput }) => ({
+                x: parseFloat(xInput.value),
+                y: parseFloat(yInput.value),
+            }));
+            this.saveCoordinates();
+            this.updateCoordinateMarkers();
         };
     }
 
-    simulateMouseAfterTouch(x, y) {
+    createCoordinateMarker(x, y, index) {
+        const canvas = document.getElementById("GameCanvas");
+        if (!canvas) return null;
+
+        const markerContainer = document.createElement("div");
+        markerContainer.style.position = "absolute";
+        markerContainer.style.width = `${this.markerSize}px`;
+        markerContainer.style.height = `${this.markerSize}px`;
+        markerContainer.style.left = `${x}px`;
+        markerContainer.style.top = `${y}px`;
+        markerContainer.style.zIndex = "9999";
+        markerContainer.style.transform = "translate(-50%, -50%)";
+
+        const circle = document.createElement("div");
+        circle.style.width = "100%";
+        circle.style.height = "100%";
+        circle.style.borderRadius = "50%";
+        circle.style.backgroundColor = `hsl(${(index * 137.5) % 360}, 70%, 50%)`;
+        circle.style.display = "flex";
+        circle.style.alignItems = "center";
+        circle.style.justifyContent = "center";
+        circle.style.fontSize = `${this.markerSize * 0.7}px`;
+        circle.style.color = "white";
+        circle.style.fontWeight = "bold";
+        circle.style.textShadow = "1px 1px 1px rgba(0,0,0,0.5)";
+        circle.textContent = (index + 1).toString();
+
+        markerContainer.appendChild(circle);
+        canvas.parentElement.appendChild(markerContainer);
+        return markerContainer;
+    }
+
+    simulateMouseAfterTouch(x, y, index) {
         const canvas = document.getElementById("GameCanvas");
         if (!canvas) return;
 
@@ -240,11 +316,19 @@ class ClickAutomation {
         clickIndicator.style.width = "40px";
         clickIndicator.style.height = "40px";
         clickIndicator.style.borderRadius = "50%";
-        clickIndicator.style.backgroundColor = "rgba(255, 255, 255, 0.5)";
+        clickIndicator.style.backgroundColor = `hsla(${(index * 137.5) % 360}, 70%, 50%, 0.5)`;
         clickIndicator.style.pointerEvents = "none";
         clickIndicator.style.zIndex = "9999";
         clickIndicator.style.transform = "scale(0)";
         clickIndicator.style.transition = "all 0.3s ease-out";
+
+        clickIndicator.style.display = "flex";
+        clickIndicator.style.alignItems = "center";
+        clickIndicator.style.justifyContent = "center";
+        clickIndicator.style.fontSize = "20px";
+        clickIndicator.style.color = "white";
+        clickIndicator.style.textShadow = "1px 1px 1px rgba(0,0,0,0.5)";
+        clickIndicator.textContent = (index + 1).toString();
 
         canvas.parentElement.appendChild(clickIndicator);
 
@@ -268,15 +352,15 @@ class ClickAutomation {
         canvas.dispatchEvent(mouseMove);
         setTimeout(() => {
             canvas.dispatchEvent(mouseDown);
-            console.log("mousedown");
+            console.log(`mousedown button ${index + 1}`);
 
             setTimeout(() => {
                 canvas.dispatchEvent(mouseUp);
-                console.log("mouseup");
+                console.log(`mouseup button ${index + 1}`);
 
                 setTimeout(() => {
                     canvas.dispatchEvent(click);
-                    console.log("click");
+                    console.log(`click button ${index + 1}`);
 
                     setTimeout(() => {
                         clickIndicator.remove();
@@ -284,6 +368,25 @@ class ClickAutomation {
                 }, 50);
             }, 50);
         }, 50);
+    }
+
+    updateCoordinateMarkers() {
+        this.clearCoordinateMarkers();
+        this.coordinateMarkers = this.buttons.map((button, index) =>
+            this.createCoordinateMarker(button.x, button.y, index)
+        );
+    }
+
+    clearCoordinateMarkers() {
+        this.coordinateMarkers.forEach((marker) => marker?.remove());
+        this.coordinateMarkers = [];
+    }
+
+    getRandomOffset() {
+        return {
+            x: Math.random() * 5 - 4,
+            y: Math.random() * 5 - 4,
+        };
     }
 
     startAutomation() {
@@ -310,7 +413,7 @@ class ClickAutomation {
     runNextClick() {
         if (!this.isRunning) return;
         const currentButton = this.buttons[this.currentButtonIndex];
-        this.simulateMouseAfterTouch(currentButton.x, currentButton.y);
+        this.simulateMouseAfterTouch(currentButton.x, currentButton.y, this.currentButtonIndex);
         this.currentButtonIndex = (this.currentButtonIndex + 1) % this.buttons.length;
         const randomDelay = 1000 + Math.random() * 500;
         setTimeout(() => this.runNextClick(), randomDelay);
