@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Bombie Catizen Auto-Clicker
-// @version      1
+// @version      2
 // @author       TOR968
 // @match        https://games.pluto.vision/games/bombie*
 // @grant        none
