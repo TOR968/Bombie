@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Bombie Catizen Auto-Clicker
-// @version      2
+// @version      2.1
 // @author       TOR968
 // @match        https://games.pluto.vision/games/bombie*
 // @grant        none
@@ -17,26 +17,35 @@ class ClickAutomation {
         this.markerSize = 20;
         this.coordinateMarkers = [];
         this.buttons = [];
-        this.loadCoordinates();
+        this.baseDelay = 1;
+        this.loadSettings();
         this.createControlPanel();
     }
 
-    saveCoordinates() {
+    saveSettings() {
         try {
-            localStorage.setItem("clickAutomationCoordinates", JSON.stringify(this.buttons));
-            console.log("Coordinates saved:", this.buttons);
+            const settings = {
+                coordinates: this.buttons,
+                delay: this.baseDelay,
+            };
+            localStorage.setItem("clickAutomationSettings", JSON.stringify(settings));
+            console.log("Settings saved:", settings);
         } catch (error) {
-            console.error("Error saving coordinates to local storage:", error);
+            console.error("Error saving settings to local storage:", error);
         }
     }
 
-    loadCoordinates() {
+    loadSettings() {
         try {
-            const savedCoordinates = localStorage.getItem("clickAutomationCoordinates");
-            if (savedCoordinates) {
-                this.buttons = JSON.parse(savedCoordinates);
-                console.log("Coordinates loaded:", this.buttons);
-            } else {
+            const savedSettings = localStorage.getItem("clickAutomationSettings");
+            if (savedSettings) {
+                const settings = JSON.parse(savedSettings);
+                this.buttons = settings.coordinates || [];
+                this.baseDelay = settings.delay || 1;
+                console.log("Settings loaded:", settings);
+            }
+
+            if (!this.buttons || this.buttons.length === 0) {
                 this.buttons = [
                     {
                         x: 0.5 * document.getElementById("GameCanvas").offsetWidth,
@@ -45,13 +54,14 @@ class ClickAutomation {
                 ];
             }
         } catch (error) {
-            console.error("Error loading coordinates from local storage:", error);
+            console.error("Error loading settings from local storage:", error);
             this.buttons = [
                 {
                     x: 0.5 * document.getElementById("GameCanvas").offsetWidth,
                     y: document.getElementById("GameCanvas").offsetHeight - 80,
                 },
             ];
+            this.baseDelay = 1;
         }
     }
 
@@ -99,7 +109,7 @@ class ClickAutomation {
             if (this.buttons.length > 1) {
                 this.buttons.splice(index, 1);
                 this.updateSettingsPanel();
-                this.saveCoordinates();
+                this.saveSettings();
                 this.updateCoordinateMarkers();
             }
         });
@@ -150,11 +160,40 @@ class ClickAutomation {
         settingsPanel.style.flexDirection = "column";
         settingsPanel.style.gap = "5px";
         settingsPanel.style.width = "200px";
-        settingsPanel.style.maxHeight = "50vh";
+        settingsPanel.style.maxHeight = "60vh";
+
+        const delayContainer = document.createElement("div");
+        delayContainer.style.display = "flex";
+        delayContainer.style.flexDirection = "column";
+        delayContainer.style.gap = "5px";
+        delayContainer.style.marginBottom = "10px";
+        delayContainer.style.padding = "5px";
+        delayContainer.style.border = "1px solid #ccc";
+        delayContainer.style.borderRadius = "5px";
+
+        const delayLabel = document.createElement("label");
+        delayLabel.textContent = "Delay (seconds)";
+        delayLabel.style.display = "flex";
+        delayLabel.style.alignItems = "center";
+        delayLabel.style.gap = "5px";
+
+        const delayInput = document.createElement("input");
+        delayInput.type = "number";
+        delayInput.min = "0.1";
+        delayInput.step = "0.1";
+        delayInput.value = this.baseDelay;
+        delayInput.style.width = "70px";
+        delayInput.addEventListener("change", () => {
+            this.baseDelay = Math.max(0.1, parseFloat(delayInput.value));
+            this.saveSettings();
+        });
+
+        delayContainer.appendChild(delayLabel);
+        delayContainer.appendChild(delayInput);
 
         const scrollContainer = document.createElement("div");
         scrollContainer.style.overflowY = "auto";
-        scrollContainer.style.maxHeight = "calc(50vh - 120px)";
+        scrollContainer.style.maxHeight = "calc(60vh - 120px)";
         scrollContainer.style.paddingRight = "5px";
         scrollContainer.style.marginRight = "-5px";
         scrollContainer.style.scrollbarWidth = "thin";
@@ -214,7 +253,7 @@ class ClickAutomation {
                 y: canvas.offsetHeight - 80,
             });
             this.updateSettingsPanel();
-            this.saveCoordinates();
+            this.saveSettings();
             this.updateCoordinateMarkers();
 
             setTimeout(() => {
@@ -223,7 +262,7 @@ class ClickAutomation {
         });
 
         const updateButton = document.createElement("button");
-        updateButton.textContent = "Update Coordinates";
+        updateButton.textContent = "Update Settings";
         updateButton.style.padding = "10px";
         updateButton.style.backgroundColor = "blue";
         updateButton.style.color = "white";
@@ -232,6 +271,7 @@ class ClickAutomation {
         updateButton.style.cursor = "pointer";
 
         addButtonContainer.appendChild(addButton);
+        settingsPanel.appendChild(delayContainer);
         settingsPanel.appendChild(scrollContainer);
         settingsPanel.appendChild(addButtonContainer);
         settingsPanel.appendChild(updateButton);
@@ -264,7 +304,7 @@ class ClickAutomation {
                 x: parseFloat(xInput.value),
                 y: parseFloat(yInput.value),
             }));
-            this.saveCoordinates();
+            this.saveSettings();
             this.updateCoordinateMarkers();
         };
     }
@@ -412,10 +452,20 @@ class ClickAutomation {
 
     runNextClick() {
         if (!this.isRunning) return;
+        if (!this.buttons || this.buttons.length === 0) {
+            console.error("No buttons available for clicking.");
+            this.stopAutomation();
+            return;
+        }
         const currentButton = this.buttons[this.currentButtonIndex];
+        if (!currentButton) {
+            console.error("Current button is undefined.");
+            this.stopAutomation();
+            return;
+        }
         this.simulateMouseAfterTouch(currentButton.x, currentButton.y, this.currentButtonIndex);
         this.currentButtonIndex = (this.currentButtonIndex + 1) % this.buttons.length;
-        const randomDelay = 1000 + Math.random() * 500;
+        const randomDelay = this.baseDelay * 1000 + Math.random() * 500;
         setTimeout(() => this.runNextClick(), randomDelay);
     }
 }
